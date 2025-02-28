@@ -18,7 +18,14 @@ class TWAPI:
             "village": "/map/village.txt",
             "player": "/map/player.txt",
             "ally": "/map/ally.txt",
-            "conquer": "/map/conquer.txt"
+            "conquer": "/map/conquer.txt",
+            "kill_att": "kill_att.txt",
+            "kill_def": "kill_def.txt",
+            "kill_sup": "kill_sup.txt",
+            "kill_all": "kill_all.txt",
+            "kill_att_tribe": "kill_att_tribe.txt",
+            "kill_def_tribe": "kill_def_tribe.txt",
+            "kill_all_tribe": "kill_all_tribe.txt",
         }
 
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

@@ -19,13 +19,13 @@ class TWAPI:
             "player": "/map/player.txt",
             "ally": "/map/ally.txt",
             "conquer": "/map/conquer.txt",
-            "kill_att": "/map/kill_att.txt",
-            "kill_def": "/map/kill_def.txt",
-            "kill_sup": "/map/kill_sup.txt",
-            "kill_all": "/map/kill_all.txt",
-            "kill_att_tribe": "/map/kill_att_tribe.txt",
-            "kill_def_tribe": "/map/kill_def_tribe.txt",
-            "kill_all_tribe": "/map/kill_all_tribe.txt",
+            "killatt": "/map/kill_att.txt",
+            "killdef": "/map/kill_def.txt",
+            "killsup": "/map/kill_sup.txt",
+            "killall": "/map/kill_all.txt",
+            "killatttribe": "/map/kill_att_tribe.txt",
+            "killdeftribe": "/map/kill_def_tribe.txt",
+            "killalltribe": "/map/kill_all_tribe.txt",
         }
 
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')

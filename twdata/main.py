@@ -9,5 +9,8 @@ tw_de = TWAPI("de", "https://die-staemme.de")
 tw_uk = TWAPI("uk")
 
 # Download the files
-# tw.get_files()
-# tw_nl.get_files()
+tw.get_files()
+tw_nl.get_files()
+tw_us.get_files()
+tw_de.get_files()
+tw_uk.get_files()

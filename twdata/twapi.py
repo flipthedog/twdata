@@ -9,10 +9,11 @@ import re
 
 class TWAPI: 
 
-    def __init__(self, language: str, base_url: Optional[str] = None, worlds: Optional[List[int]] = None):
+    def __init__(self, language: str, base_url: Optional[str] = None, worlds: Optional[List[int]] = None, save_local: bool = False):
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         
         self.language = language
+        self.save_local = save_local
 
         logging.info(f"Initializing TWAPI for language: {language}")
         
@@ -69,7 +70,16 @@ class TWAPI:
             logging.info(f"Using provided worlds: {self.worlds}")
         
         # Construct URLs with the correct domain for the language
-        self.urls = [f"https://{language}{world}.tribalwars{self.domain}" for world in self.worlds]
+        if base_url is None:
+            self.urls = [f"https://{language}{world}.tribalwars{self.domain}" for world in self.worlds]
+        else:
+            # For custom base URLs like "https://die-staemme.de", extract the domain and use it
+            from urllib.parse import urlparse
+            parsed_url = urlparse(self.base_url)
+            # For "https://die-staemme.de" -> "die-staemme.de"
+            custom_domain = parsed_url.netloc
+            self.urls = [f"https://{language}{world}.{custom_domain}" for world in self.worlds]
+        
         logging.info(f"Generated {len(self.urls)} URLs for data collection")
 
         self.map_files = {
@@ -187,10 +197,18 @@ class TWAPI:
                     response = requests.get(url_get)
                     response.raise_for_status()
                     
+                    if not self.check_file_validity(response.text):
+                        logging.warning(f"  Invalid file content for {key} from {url_get}, skipping...")
+                        continue
+
                     logging.info(f"  Successfully downloaded {key} ({len(response.text)} characters)")
                     
-                    # Upload to S3
-                    self.upload_to_s3(response.text, world, key)
+                    if self.save_local:
+                        # Save locally
+                        self.save_locally(response.text, world, key)
+                    else:
+                        # Upload to S3
+                        self.upload_to_s3(response.text, world, key)
                     
                 except requests.RequestException as e:
                     logging.error(f"  Failed to download {key} from {url_get}: {e}")
@@ -202,7 +220,58 @@ class TWAPI:
         
         logging.info("Completed all file downloads")
 
+    def check_file_validity(self, file_content: str) -> bool:
+        """Checks if the downloaded file content is valid.
+
+        Args:
+            file_content (str): The content of the file to check.
+        Returns:
+            bool: True if valid, False otherwise.
+        """
+
+        check_string = "<!DOCTYPE html>"
+
+        if file_content.startswith(check_string):
+            logging.warning("  File content appears to be HTML, indicating an error page.")
+            return False
+        return True
+
+    def save_locally(self, file_content: str, world: str, key: str):
+        """Saves a file locally.
+
+        Args:
+            file_content (str): The content of the file to save.
+            world (str): The world the file belongs to.
+            key (str): The key (filename) to use.
+        """
+        current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"data/{key}_{world}_{current_time}.txt"
+        
+        try:
+            # Ensure the directory exists
+            import os
+            os.makedirs(os.path.dirname(filename), exist_ok=True)
+        except Exception as e:
+            logging.error(f"  Failed to create directory for {filename}: {e}")
+            raise
+
+        try:
+            with open(filename, 'w', encoding='utf-8') as f:
+                f.write(file_content)
+            logging.info(f"  Successfully saved to {filename}")
+        except Exception as e:
+            logging.error(f"  Failed to save file {filename}: {e}")
+            raise
+
     def upload_to_s3(self, file_content: str, world: str, key: str):
+        """Uploads a file to S3.
+
+        Args:
+            file_content (str): The content of the file to upload.
+            world (str): The world the file belongs to.
+            key (str): The key (filename) to use in S3.
+        """
+
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
         s3_key = f"{world}/{key}_{world}_{current_time}.txt"
         
@@ -213,6 +282,7 @@ class TWAPI:
         except Exception as e:
             logging.error(f"  Failed to upload to S3: {e}")
             raise
+
 
 if __name__ == "__main__":
     # Configure logging first

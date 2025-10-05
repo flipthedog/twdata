@@ -9,11 +9,21 @@ import re
 
 class TWAPI: 
 
-    def __init__(self, language: str, base_url: Optional[str] = None, worlds: Optional[List[int]] = None, save_local: bool = False):
+    def __init__(self, 
+                 language: str, 
+                 base_url: Optional[str] = None, 
+                 worlds: Optional[List[int]] = None, 
+                 save_local: bool = False,
+                 timeout: int = 10,
+                 sleep_time: int = 5
+                 ):
         logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
         
-        self.language = language
-        self.save_local = save_local
+        # Configuration variables
+        self.language = language  # e.g., 'en', 'de', 'fr'
+        self.save_local = save_local  # Whether to save files locally or upload to S3
+        self.timeout = timeout  # Timeout for HTTP requests
+        self.sleep_time = sleep_time  # Sleep time between requests
 
         logging.info(f"Initializing TWAPI for language: {language}")
         
@@ -45,10 +55,7 @@ class TWAPI:
         self.domain = self.domain_map.get(language, '.net')  # Default to .net
         logging.info(f"Using domain: {self.domain} for language: {language}")
         
-        if base_url is None:
-            self.base_url = f"https://{language}.tribalwars{self.domain}"
-        else:
-            self.base_url = base_url
+        self.base_url = base_url  # e.g., "https://die-staemme.de"
             
         # Set up the worlds URL first - needed for fetching active worlds
         self.worlds_url = f"{self.base_url}/backend/get_servers.php"
@@ -196,7 +203,7 @@ class TWAPI:
                 try:
                     response = requests.get(url_get)
                     response.raise_for_status()
-                    
+
                     if not self.check_file_validity(response.text):
                         logging.warning(f"  Invalid file content for {key} from {url_get}, skipping...")
                         continue
@@ -210,14 +217,25 @@ class TWAPI:
                         # Upload to S3
                         self.upload_to_s3(response.text, world, key)
                     
+                except requests.exceptions.ConnectionError as e:
+                    logging.error(f"  NETWORK ERROR: Failed to connect to {url_get}: {e}")
+                    continue
+                except requests.exceptions.Timeout as e:
+                    logging.error(f"  TIMEOUT ERROR: Request timed out for {url_get}: {e}")
+                    continue
+                except requests.exceptions.HTTPError as e:
+                    logging.error(f"  HTTP ERROR: {e.response.status_code} for {url_get}: {e}")
+                    continue
                 except requests.RequestException as e:
-                    logging.error(f"  Failed to download {key} from {url_get}: {e}")
+                    logging.error(f"  REQUEST ERROR: Failed to download {key} from {url_get}: {e}")
+                    continue
+                except Exception as e:
+                    logging.error(f"  UNEXPECTED ERROR: Error while processing {key} from {url_get}: {e}")
                     continue
 
-                # delay of 5 seconds
-                logging.debug(f"  Waiting 5 seconds before next download...")
-                time.sleep(5)
-        
+                logging.debug(f"  Waiting {self.sleep_time} seconds before next download...")
+                time.sleep(self.sleep_time)
+
         logging.info("Completed all file downloads")
 
     def check_file_validity(self, file_content: str) -> bool:
@@ -245,7 +263,7 @@ class TWAPI:
             key (str): The key (filename) to use.
         """
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"data/{key}_{world}_{current_time}.txt"
+        filename = f"data/{world}/{key}_{world}_{current_time}.txt"
         
         try:
             # Ensure the directory exists

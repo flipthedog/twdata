@@ -1,0 +1,38 @@
+server_parent: &server_default
+  timeout: 10
+  retries: 3
+  backoff_factor: 2
+  sleep: 0.2
+
+servers:
+  - <<: *server_default
+    name: "en"
+    domain: ".net"
+    url: "https://tribalwars.net"
+  - <<: *server_default
+    name: "de"
+    url: "https://die-staemme.de"
+    domain: ".de"
+  - <<: *server_default
+    name: "nl"
+    domain: ".nl"
+    url: "https://tribalwars.nl"
+  - <<: *server_default
+    name: "us"
+    domain: ".com"
+    url: "https://tribalwars.us"
+  - <<: *server_default
+    name: "uk"
+    domain: ".co.uk"
+    url: "https://tribalwars.co.uk"
+  - <<: *server_default
+    name: "tr"
+    url: "http://klanlar.org/"
+  - <<: *server_default
+    name: "br"
+    url: "http://tribalwars.com.br/"
+    domain: ".com.br"
+  - <<: *server_default
+    name: "pl"
+    domain: ".pl"
+    url: "https://plemiona.pl"

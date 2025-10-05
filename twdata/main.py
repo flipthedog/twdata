@@ -1,16 +1,31 @@
 from twdata.twapi import TWAPI
+import logging
+from datetime import datetime
+import yaml
 
+# log to file and console
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.FileHandler('twdata.log'),
+        logging.StreamHandler()
+    ]
+)
 
-# Create an instance of the TWAPI class
-tw = TWAPI("en")
-tw_nl = TWAPI("nl")
-tw_us = TWAPI("us")
-tw_de = TWAPI("de", "https://die-staemme.de")
-tw_uk = TWAPI("uk")
+logging.info("Starting TWAPI data download script.")
 
-# Download the files
-tw.get_files()
-tw_nl.get_files()
-tw_us.get_files()
-tw_de.get_files()
-tw_uk.get_files()
+with open("conf/servers.yaml", "r") as f:
+    config = yaml.safe_load(f)
+
+logging.info("Loaded server configuration.")
+
+for server in config['servers']:
+    logging.info(f"Server: {server['name']}, URL: {server['url']}")
+    # Create an instance of the TWAPI class
+    server_name = server['name']
+    server_url = server['url']
+    sleep_time = server.get('sleep', 5)  # Default to 5 seconds if not specified
+    tw = TWAPI(server_name, server_url, sleep_time=sleep_time, save_local=True)
+    tw.get_files()
+    logging.info(f"Completed data download for server: {server_name}")

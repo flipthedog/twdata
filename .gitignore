@@ -2,6 +2,7 @@
 notes 
 data/
 .DS_Store
+.github
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

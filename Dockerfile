@@ -25,6 +25,7 @@ COPY twdata/ ./twdata/
 COPY pyproject.toml ./
 COPY .gitignore ./
 COPY uv.lock ./
+COPY conf/servers.yaml ./conf/servers.yaml
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev

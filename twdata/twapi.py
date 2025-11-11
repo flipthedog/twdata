@@ -291,11 +291,20 @@ class TWAPI:
         """
 
         current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
-        s3_key = f"{world}/{key}_{world}_{current_time}.txt"
-        
+
+        if key == "conquer":
+            s3_key = f"{world}/conquer.txt"
+            # For conquer files, we replace the existing file
+            extra_args = {}
+        else:
+            s3_key = f"{world}/{key}_{world}_{current_time}.txt"
+            extra_args = {}
+
         try:
             logging.info(f"  Uploading to S3: {s3_key} ({len(file_content)} characters)")
-            self.s3_client.put_object(Body=file_content, Bucket=self.bucket_name, Key=s3_key)
+            if key == "conquer":
+                logging.info(f"  Replacing existing conquer file")
+            self.s3_client.put_object(Body=file_content, Bucket=self.bucket_name, Key=s3_key, **extra_args)
             logging.info(f"  Successfully uploaded to s3://{self.bucket_name}/{s3_key}")
         except Exception as e:
             logging.error(f"  Failed to upload to S3: {e}")
